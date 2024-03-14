@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DoKitDemo</string>
+    <string name="app_name">DoKit</string>
     <string name="dk_kit_demo">demo</string>
     <string name="dk_titlebar_back">&#060;</string>
     <string name="app_build_types">当前编译环境</string>
@@ -27,5 +27,12 @@
     <string name="app_btn_download_file">下载文件</string>
     <string name="dk_kit_simple_float" translatable="false">自定义悬浮</string>
     <string name="dk_kit_fullscreen" translatable="false">自定义全屏</string>
+
+    <string-array name="city">
+        <item> 北京</item>
+        <item>上海</item>
+        <item>广州</item>
+        <item>深圳</item>
+    </string-array>
 
 </resources>

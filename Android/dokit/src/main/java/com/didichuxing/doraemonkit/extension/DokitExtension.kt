@@ -3,7 +3,7 @@ package com.didichuxing.doraemonkit.extension
 import android.app.Activity
 import android.util.Log
 import com.didichuxing.doraemonkit.aop.DokitThirdLibInfo
-import com.didichuxing.doraemonkit.kit.core.AbsDokitView
+import com.didichuxing.doraemonkit.kit.core.AbsDoKitView
 import com.didichuxing.doraemonkit.kit.network.room_db.DokitDbManager
 import com.didichuxing.doraemonkit.util.EncodeUtils
 import com.didichuxing.doraemonkit.util.GsonUtils
@@ -11,7 +11,6 @@ import com.didichuxing.doraemonkit.util.LogHelper
 import kotlinx.coroutines.*
 import okhttp3.RequestBody
 import okio.Buffer
-import org.checkerframework.common.returnsreceiver.qual.This
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -42,7 +41,7 @@ val Activity.tagName: String
         return this.javaClass.canonicalName ?: ""
     }
 
-val AbsDokitView.tagName: String
+val AbsDoKitView.tagName: String
     get() {
         return this.javaClass.canonicalName ?: ""
     }
@@ -160,6 +159,20 @@ fun String.toMap(): MutableMap<String, String> {
     }
     return map
 }
+
+/**
+ * RequestBody 转为字符串
+ */
+fun RequestBody?.string(): String {
+    if (this != null && this.contentLength() > 0) {
+        val buffer = Buffer()
+        this.writeTo(buffer)
+        val stringBody = EncodeUtils.urlDecode(buffer.readUtf8())
+        return stringBody
+    }
+    return ""
+}
+
 
 /**
  * queryBody转成Map

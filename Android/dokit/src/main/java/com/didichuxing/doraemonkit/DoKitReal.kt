@@ -3,23 +3,20 @@ package com.didichuxing.doraemonkit
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import com.didichuxing.doraemonkit.config.GlobalConfig
-import com.didichuxing.doraemonkit.config.GpsMockConfig
 import com.didichuxing.doraemonkit.config.PerformanceSpInfoConfig
 import com.didichuxing.doraemonkit.constant.DoKitModule
-import com.didichuxing.doraemonkit.kit.core.DoKitManager
 import com.didichuxing.doraemonkit.constant.SharedPrefsKey
 import com.didichuxing.doraemonkit.datapick.DataPickManager
 import com.didichuxing.doraemonkit.extension.doKitGlobalExceptionHandler
 import com.didichuxing.doraemonkit.extension.doKitGlobalScope
 import com.didichuxing.doraemonkit.kit.AbstractKit
 import com.didichuxing.doraemonkit.kit.core.*
-import com.didichuxing.doraemonkit.kit.gpsmock.GpsMockManager
-import com.didichuxing.doraemonkit.kit.gpsmock.ServiceHookManager
 import com.didichuxing.doraemonkit.kit.health.AppHealthInfoUtil
 import com.didichuxing.doraemonkit.kit.health.model.AppHealthInfo.DataBean.BigFileBean
 import com.didichuxing.doraemonkit.kit.network.NetworkManager
@@ -32,7 +29,6 @@ import com.didichuxing.doraemonkit.kit.webdoor.WebDoorManager.WebDoorCallback
 import com.didichuxing.doraemonkit.util.*
 import kotlinx.coroutines.*
 import java.io.File
-import java.io.IOException
 import java.util.*
 
 /**
@@ -88,14 +84,12 @@ object DoKitReal {
         checkLargeImgIsOpen()
         registerNetworkStatusChangedListener()
         startAppHealth()
-        checkGPSMock()
-        //Hook WIFI GPS Telephony系统服务
-        ServiceHookManager.install(app)
-        //全局运行时hook
+        initGpsMock()
+
         globalRunTimeHook()
 
         //注册全局的activity生命周期回调
-        app.registerActivityLifecycleCallbacks(DokitActivityLifecycleCallbacks())
+        app.registerActivityLifecycleCallbacks(DoKitActivityLifecycleCallbacks())
         //注册App前后台切换监听
         registerAppStatusChangedListener()
         //DokitConstant.KIT_MAPS.clear()
@@ -153,7 +147,7 @@ object DoKitReal {
 
         //addSystemKitForTest(app)
         //初始化悬浮窗管理类
-        DokitViewManager.INSTANCE.init()
+        DoKitViewManager.INSTANCE.init()
         //上传app基本信息便于统计
         if (DoKitManager.ENABLE_UPLOAD) {
             try {
@@ -178,16 +172,16 @@ object DoKitReal {
         AppUtils.registerAppStatusChangedListener(object : Utils.OnAppStatusChangedListener {
             //进入前台
             override fun onForeground(activity: Activity?) {
-                DokitServiceManager.dispatch(
-                    DokitServiceEnum.onForeground,
+                DoKitServiceManager.dispatch(
+                    DoKitServiceEnum.onForeground,
                     activity!!
                 )
             }
 
             //进入后台
             override fun onBackground(activity: Activity?) {
-                DokitServiceManager.dispatch(
-                    DokitServiceEnum.onBackground,
+                DoKitServiceManager.dispatch(
+                    DoKitServiceEnum.onBackground,
                     activity!!
                 )
             }
@@ -256,12 +250,25 @@ object DoKitReal {
 
     }
 
-    private fun checkGPSMock() {
-        if (GpsMockConfig.isGPSMockOpen()) {
-            GpsMockManager.getInstance().startMock()
+    /**
+     * 获取MC当前的链接地址
+     */
+    fun getMcConnectUrl(): String {
+        try {
+            val mcProcessor = DoKitManager.getModuleProcessor(DoKitModule.MODULE_MC)
+            val map = mcProcessor?.proceed(mapOf("action" to "dokit_mc_connect_url"))
+            val url = map?.get("url") as String
+            return url
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        val latLng = GpsMockConfig.getMockLocation() ?: return
-        GpsMockManager.getInstance().mockLocationWithNotify(latLng.latitude, latLng.longitude)
+        return ""
+    }
+    private fun initGpsMock(){
+        val map = mapOf(
+            "action" to "init_gps_mock"
+        )
+        DoKitManager.getModuleProcessor(DoKitModule.MODULE_GPS_MOCK)?.proceed(map)
     }
 
     /**
@@ -428,7 +435,7 @@ object DoKitReal {
      * 显示系统悬浮窗icon
      */
     private fun showMainIcon() {
-        DokitViewManager.INSTANCE.attachMainIcon(ActivityUtils.getTopActivity())
+        DoKitViewManager.INSTANCE.attachMainIcon(ActivityUtils.getTopActivity())
     }
 
     fun show() {
@@ -442,17 +449,17 @@ object DoKitReal {
      * 直接显示工具面板页面
      */
     fun showToolPanel() {
-        DokitViewManager.INSTANCE.attachToolPanel(ActivityUtils.getTopActivity())
+        DoKitViewManager.INSTANCE.attachToolPanel(ActivityUtils.getTopActivity())
     }
 
     fun hideToolPanel() {
-        DokitViewManager.INSTANCE.detachToolPanel()
+        DoKitViewManager.INSTANCE.detachToolPanel()
     }
 
     fun hide() {
         DoKitManager.MAIN_ICON_HAS_SHOW = false
         DoKitManager.ALWAYS_SHOW_MAIN_ICON = false
-        DokitViewManager.INSTANCE.detachMainIcon()
+        DoKitViewManager.INSTANCE.detachMainIcon()
     }
 
     fun sendCustomEvent(eventType: String, view: View? = null, param: Map<String, String>? = null) {
@@ -463,6 +470,14 @@ object DoKitReal {
             "param" to param
         )
         DoKitManager.getModuleProcessor(DoKitModule.MODULE_MC)?.proceed(map)
+    }
+
+    fun getMode(): String {
+        val map = mapOf(
+            "action" to "mc_mode"
+        )
+        val result = DoKitManager.getModuleProcessor(DoKitModule.MODULE_MC)?.proceed(map)
+        return result?.get("mode") as String
     }
 
     /**
@@ -533,7 +548,7 @@ object DoKitReal {
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
     fun launchFloating(
-        targetClass: Class<out AbsDokitView>,
+        targetClass: Class<out AbsDoKitView>,
         mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE,
         bundle: Bundle? = null
     ) {
@@ -546,7 +561,7 @@ object DoKitReal {
      * @JvmStatic:允许使用java的静态方法的方式调用
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
-    fun removeFloating(targetClass: Class<out AbsDokitView>) {
+    fun removeFloating(targetClass: Class<out AbsDoKitView>) {
         SimpleDoKitLauncher.removeFloating(targetClass)
     }
 
@@ -555,7 +570,7 @@ object DoKitReal {
      * @JvmStatic:允许使用java的静态方法的方式调用
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
-    fun removeFloating(dokitView: AbsDokitView) {
+    fun removeFloating(dokitView: AbsDoKitView) {
         SimpleDoKitLauncher.removeFloating(dokitView)
     }
 
@@ -574,14 +589,14 @@ object DoKitReal {
     }
 
     @JvmStatic
-    fun <T : AbsDokitView> getDoKitView(
+    fun <T : AbsDoKitView> getDoKitView(
         activity: Activity?,
         clazz: Class<out T>
     ): T? {
-        return if (DokitViewManager.INSTANCE.getDoKitView(activity, clazz) == null) {
+        return if (DoKitViewManager.INSTANCE.getDoKitView(activity, clazz) == null) {
             null
         } else {
-            DokitViewManager.INSTANCE.getDoKitView(activity, clazz) as T
+            DoKitViewManager.INSTANCE.getDoKitView(activity, clazz) as T
         }
     }
 }

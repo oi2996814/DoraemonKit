@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.view.View
-import com.didichuxing.doraemonkit.constant.WSMode
 import com.didichuxing.doraemonkit.kit.AbstractKit
 import com.didichuxing.doraemonkit.kit.core.*
 import com.didichuxing.doraemonkit.kit.network.okhttp.interceptor.DokitExtInterceptor
@@ -79,13 +78,21 @@ object DoKit {
     }
 
     /**
+     * 获取MC当前链接地址
+     */
+    @JvmStatic
+    fun getMcConnectUrl(): String {
+        return DoKitReal.getMcConnectUrl()
+    }
+
+    /**
      * 启动悬浮窗
      * @JvmStatic:允许使用java的静态方法的方式调用
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
     @JvmStatic
     @JvmOverloads
-    fun launchFloating(targetClass: Class<out AbsDokitView>, mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
+    fun launchFloating(targetClass: Class<out AbsDoKitView>, mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
         DoKitReal.launchFloating(targetClass, mode, bundle)
     }
 
@@ -96,14 +103,14 @@ object DoKit {
         "Use launchFloating(DoKitViewLaunchMode, Bundle) directly",
         ReplaceWith("Dokit.launchFloating(mode, bundle)")
     )
-    fun launchFloating(targetClass: KClass<out AbsDokitView>, mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
+    fun launchFloating(targetClass: KClass<out AbsDoKitView>, mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
         launchFloating(targetClass.java, mode, bundle)
     }
 
     /**
      * 启动悬浮窗
      */
-    inline fun <reified T : AbsDokitView> launchFloating(mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
+    inline fun <reified T : AbsDoKitView> launchFloating(mode: DoKitViewLaunchMode = DoKitViewLaunchMode.SINGLE_INSTANCE, bundle: Bundle? = null) {
         DoKitReal.launchFloating(T::class.java, mode, bundle)
     }
 
@@ -113,7 +120,7 @@ object DoKit {
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
     @JvmStatic
-    fun removeFloating(targetClass: Class<out AbsDokitView>) {
+    fun removeFloating(targetClass: Class<out AbsDoKitView>) {
         DoKitReal.removeFloating(targetClass)
     }
 
@@ -123,7 +130,7 @@ object DoKit {
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
     @Deprecated("Use removeFloating(Class) directly", ReplaceWith("Dokit.removeFloating(class)"))
-    fun removeFloating(targetClass: KClass<out AbsDokitView>) {
+    fun removeFloating(targetClass: KClass<out AbsDoKitView>) {
         removeFloating(targetClass.java)
     }
 
@@ -133,7 +140,7 @@ object DoKit {
      * @JvmOverloads :在有默认参数值的方法中使用@JvmOverloads注解，则Kotlin就会暴露多个重载方法。
      */
     @JvmStatic
-    fun removeFloating(dokitView: AbsDokitView) {
+    fun removeFloating(dokitView: AbsDoKitView) {
         DoKitReal.removeFloating(dokitView)
     }
 
@@ -162,16 +169,16 @@ object DoKit {
     }
 
     @JvmStatic
-    fun <T : AbsDokitView> getDoKitView(activity: Activity?, clazz: Class<out T>): T? {
+    fun <T : AbsDoKitView> getDoKitView(activity: Activity?, clazz: Class<out T>): T? {
         return DoKitReal.getDoKitView<T>(activity, clazz)
     }
 
     @Deprecated("Use getDoKitView(activity) directly", ReplaceWith("DoKit.getDoKitView(activity)"))
-    fun <T : AbsDokitView> getDoKitView(activity: Activity?, clazz: KClass<out T>): T? {
+    fun <T : AbsDoKitView> getDoKitView(activity: Activity?, clazz: KClass<out T>): T? {
         return getDoKitView(activity, clazz.java)
     }
 
-    inline fun <reified T : AbsDokitView> getDoKitView(activity: Activity): T? = DoKitReal.getDoKitView(activity, T::class.java)
+    inline fun <reified T : AbsDoKitView> getDoKitView(activity: Activity): T? = DoKitReal.getDoKitView(activity, T::class.java)
 
     /**
      * 发送自定义一机多控事件
@@ -185,7 +192,9 @@ object DoKit {
      * 获取一机多控类型
      */
     @JvmStatic
-    fun mcMode(): WSMode = DoKitManager.WS_MODE
+    fun mcMode(): String {
+       return DoKitReal.getMode()
+    }
 
     class Builder(private val app: Application) {
         private var productId: String = ""

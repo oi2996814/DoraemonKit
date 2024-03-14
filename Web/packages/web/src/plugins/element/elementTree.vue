@@ -28,8 +28,8 @@
           </span> </i
         >&gt;
       </span>
-      <template v-if="canFold">
-        <div v-show="unfold" v-for="child in node.childNodes" :key="child.key">
+      <template v-if="canFold&&unfold">
+        <div v-for="child in node.childNodes" :key="child.key">
           <ElementTree :node="child" :parentIsUnfold="unfold"></ElementTree>
         </div>
       </template>
@@ -69,13 +69,18 @@ export default {
         $bus.off(this.node.key + "refreshChild", this.refreshSon);
       }
     },
-    parentIsUnfold(val) {
-      if (val) {
-        $bus.on(this.node.key + "refreshMy", this.refresh);
-      } else {
-        $bus.off(this.node.key + "refreshMy", this.refresh);
-      }
-    },
+    parentIsUnfold:{
+      handler: function (val) {
+        if(this.node?.key){
+          if (val) {
+            $bus.on(this.node.key + "refreshMy", this.refresh);
+          } else {
+            $bus.off(this.node.key + "refreshMy", this.refresh);
+          }
+        }
+      },
+      immediate: true,
+    }
   },
   created() {
     if (this?.node?.tagName === "HTML") {
@@ -105,10 +110,10 @@ export default {
       return names.indexOf(tagName) > -1 ? true : false;
     },
     unfoldDetail() {
-      this.unfold = !this.unfold;
+      this.canFold()&&(this.unfold = !this.unfold);
     },
     canFold() {
-      if (node.childNodes.length > 0) {
+      if (this.node.childNodes.length > 0) {
         return true;
       }
       return false;

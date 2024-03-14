@@ -24,9 +24,10 @@ public class NetworkManager {
     public static final String MOCK_SCHEME_HTTP = "http://";
     public static final String MOCK_SCHEME_HTTPS = "https://";
     //    private static final String MOCK_HOST_DEBUG = "xyrd.intra.xiaojukeji.com";
-    private static final String MOCK_HOST_DEBUG = "mock.dokit.cn";
-//    private static final String MOCK_HOST_DEBUG = "pre.dokit.cn";
-    private static final String MOCK_HOST_RELEASE = "mock.dokit.cn";
+    public static final String DOKIT_HOST = "www.dokit.cn";
+    public static final String MOCK_HOST_DEBUG = "mock.dokit.cn";
+    //    private static final String MOCK_HOST_DEBUG = "pre.dokit.cn";
+    public static final String MOCK_HOST_RELEASE = "mock.dokit.cn";
     private static final String MOCK_DEBUG_DOMAIN = MOCK_SCHEME_HTTPS + MOCK_HOST_DEBUG;
     private static final String MOCK_RELEASE_DOMAIN = MOCK_SCHEME_HTTPS + MOCK_HOST_RELEASE;
     public static final String MOCK_DOMAIN = BuildConfig.DEBUG ? MOCK_DEBUG_DOMAIN : MOCK_RELEASE_DOMAIN;
@@ -72,7 +73,7 @@ public class NetworkManager {
     /**
      * dokit 更多页面接口请求
      */
-    public static final String DOKIT_MORE_PAGE_URL = "http://star.xiaojukeji.com/config/get.node?city=-1&areaid=&name=group";
+    public static final String DOKIT_MORE_PAGE_URL = "https://star.xiaojukeji.com/config/get.node?city=-1&areaid=&name=group";
     /**
      * 预发环境
      */

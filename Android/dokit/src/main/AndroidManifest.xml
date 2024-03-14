@@ -49,6 +49,10 @@
             android:name=".zxing.activity.CaptureActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|stateUnchanged" />
+        <activity
+            android:name=".kit.connect.DoKitScanActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|stateUnchanged" />
 
         <provider
             android:name=".DebugFileProvider"
@@ -59,6 +63,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/dokit_debug_provider_paths" />
         </provider>
+
+        <!-- Dokit targetApi为 29 Android Q时截屏的前台服务 -->
+        <service
+            android:name="com.didichuxing.doraemonkit.kit.colorpick.ScreenRecorderService"
+            android:enabled="true"
+            android:foregroundServiceType="mediaProjection" />
 
         <!--<service-->
         <!--android:name=".kit.viewcheck.DebugAccessibilityService"-->

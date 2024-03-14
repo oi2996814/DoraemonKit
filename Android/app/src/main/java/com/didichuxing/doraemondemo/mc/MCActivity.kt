@@ -1,8 +1,10 @@
 package com.didichuxing.doraemondemo.mc
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import android.widget.AdapterView.OnItemSelectedListener
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -11,24 +13,50 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import com.blankj.utilcode.util.ToastUtils
 import com.didichuxing.doraemondemo.R
+import com.didichuxing.doraemondemo.test.ScreenRecordingTest
 import com.didichuxing.doraemonkit.DoKit
+import com.didichuxing.doraemonkit.constant.BundleKey
+import com.didichuxing.doraemonkit.kit.fileexplorer.ImageDetailFragment
+import com.didichuxing.doraemonkit.kit.test.report.ScreenShotManager
+import java.io.File
 
 /**
  * 一机多控Demo Activity
  */
 class MCActivity : AppCompatActivity() {
-    val TAG = "MCActivity"
+
+    companion object {
+        private const val TAG = "MCActivity"
+    }
 
     lateinit var mAdapter: RVAdapter
+
+    private val screenShotManager = ScreenShotManager("test/kk")
+
+    private val screenRecordingTest = ScreenRecordingTest()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mc)
 
+        findViewById<Button>(R.id.nextPage).setOnClickListener {
+            startActivity(Intent(this, NetMainActivity::class.java))
+        }
 
-//        btn_webview.setOnClickListener {
-//            startActivity(Intent(this@MCActivity, WebViewActivity::class.java))
-//        }
+        findViewById<Button>(R.id.webPage).setOnClickListener {
+            startActivity(Intent(this, WebViewActivity::class.java))
+        }
+
+        findViewById<Button>(R.id.testPage).setOnClickListener {
+            startScreenShot()
+        }
+
+        findViewById<Button>(R.id.screenPage).setOnClickListener {
+            screenRecordingTest.start(this)
+        }
+
+
 
         findViewById<SlideBar>(R.id.unlock_bar).setOnUnlockListener(object :
             SlideBar.OnUnlockListener {
@@ -36,7 +64,10 @@ class MCActivity : AppCompatActivity() {
                 DoKit.sendCustomEvent(
                     "un_lock",
                     view,
-                    mapOf("unlock" to "custom unlock")
+                    mapOf(
+                        "unlock" to "custom unlock",
+                        "testRecording" to "true"
+                    )
                 )
             }
 
@@ -44,12 +75,32 @@ class MCActivity : AppCompatActivity() {
                 DoKit.sendCustomEvent(
                     "lock_process",
                     view,
-                    mapOf("progress" to "$leftMargin")
+                    mapOf(
+                        "progress" to "$leftMargin",
+                        "testRecording" to "false"
+                    )
                 )
             }
-
         })
 
+        val spinner = findViewById<Spinner>(R.id.spinner)
+
+        val citis = resources.getStringArray(R.array.city);
+        val adapter = ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, citis)
+        //第三步：设置下拉列表下拉时的菜单样式
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.setAdapter(adapter)
+        spinner.prompt = "测试"
+
+        spinner.setOnItemSelectedListener(object : OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+                ToastUtils.showShort("选择：" + citis[position])
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                ToastUtils.showShort("没有选择")
+            }
+        })
 
 
         findViewById<View>(R.id.btn1).setOnClickListener {
@@ -83,6 +134,17 @@ class MCActivity : AppCompatActivity() {
         initData()
 
     }
+
+
+    private fun startScreenShot() {
+        val map = screenShotManager.screenshotBitmap()
+        val fileName = screenShotManager.createNextFileName()
+        screenShotManager.saveBitmap(map, fileName)
+        val bundle = Bundle()
+        bundle.putSerializable(BundleKey.FILE_KEY, File(screenShotManager.getScreenFile(fileName)))
+        DoKit.launchFullScreen(ImageDetailFragment::class.java, this, bundle, false)
+    }
+
 
     private fun initData() {
 
@@ -138,4 +200,8 @@ class MCActivity : AppCompatActivity() {
     }
 
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        screenRecordingTest.onActivityResult(requestCode, resultCode, data)
+    }
 }
